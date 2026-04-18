@@ -1,5 +1,4 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Replace these placeholders with your Firebase project config.
@@ -16,7 +15,4 @@ const firebaseConfig = {
 export const isFirebaseConfigured = !firebaseConfig.apiKey.startsWith('YOUR_');
 
 export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
-export const auth = isFirebaseConfigured ? getAuth(app!) : null;
 export const db = isFirebaseConfigured ? getFirestore(app!) : null;
-
-export { signInAnonymously, onAuthStateChanged };

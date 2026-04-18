@@ -2,16 +2,33 @@ import { useState } from 'react';
 import { Calendar } from './components/Calendar';
 import { Stats } from './components/Stats';
 import { SyncStatus } from './components/SyncStatus';
+import { CodeEntry } from './components/CodeEntry';
 import { useCalendarData } from './hooks/useCalendarData';
 import { isFirebaseConfigured } from './firebase';
 
 const now = new Date();
 const TODAY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+const LS_CODE_KEY = 'diet-calendar-code';
 
 export function App() {
+  const [userCode, setUserCode] = useState<string | null>(() => localStorage.getItem(LS_CODE_KEY));
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(3); // April
-  const { days, sync, toggleDay } = useCalendarData();
+  const { days, sync, toggleDay } = useCalendarData(userCode);
+
+  if (!userCode) {
+    return (
+      <CodeEntry onSubmit={(code) => {
+        localStorage.setItem(LS_CODE_KEY, code);
+        setUserCode(code);
+      }} />
+    );
+  }
+
+  const handleChangeCode = () => {
+    localStorage.removeItem(LS_CODE_KEY);
+    setUserCode(null);
+  };
 
   const prevMonth = () => {
     if (month === 0) { setYear((y) => y - 1); setMonth(11); }
@@ -27,9 +44,10 @@ export function App() {
     <div style={{
       minHeight: '100dvh',
       background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-      padding: 'env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 24px)',
+      padding: '20px 16px',
       paddingTop: 'max(env(safe-area-inset-top), 20px)',
       paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+      boxSizing: 'border-box',
     }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
 
@@ -38,7 +56,7 @@ export function App() {
           <h1 style={{
             margin: 0,
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(22px, 6vw, 32px)',
+            fontSize: 'clamp(22px, 6vw, 30px)',
             color: '#f1f5f9',
             letterSpacing: '-0.3px',
           }}>
@@ -47,11 +65,42 @@ export function App() {
           <SyncStatus sync={sync} />
         </div>
 
+        {/* Active code + change button */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '10px 14px',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '10px',
+        }}>
+          <div style={{ fontSize: '12px', color: '#64748b' }}>
+            Code: <span style={{ color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>{userCode}</span>
+          </div>
+          <button
+            onClick={handleChangeCode}
+            style={{
+              background: 'none',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              fontSize: '11px',
+              color: '#64748b',
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Code ändern
+          </button>
+        </div>
+
         {/* Firebase not configured banner */}
         {!isFirebaseConfigured && (
           <div style={{
             background: 'rgba(250, 204, 21, 0.1)',
-            border: '1px solid rgba(250, 204, 21, 0.25)',
+            border: '1px solid rgba(250, 204, 21, 0.2)',
             borderRadius: '10px',
             padding: '10px 14px',
             marginBottom: '20px',
@@ -59,7 +108,7 @@ export function App() {
             color: '#fbbf24',
             lineHeight: 1.5,
           }}>
-            Firebase nicht konfiguriert — Daten werden lokal gespeichert. Siehe README für Setup.
+            Firebase nicht konfiguriert — Daten werden lokal gespeichert.
           </div>
         )}
 

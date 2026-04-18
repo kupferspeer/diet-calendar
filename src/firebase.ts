@@ -5,12 +5,12 @@ import { getFirestore } from 'firebase/firestore';
 // Replace these placeholders with your Firebase project config.
 // See README.md for setup instructions.
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyAqOJTSM5Cqv4YgOjjE2TYCzg0iMMnly6s',
+  authDomain: 'diet-calender.firebaseapp.com',
+  projectId: 'diet-calender',
+  storageBucket: 'diet-calender.firebasestorage.app',
+  messagingSenderId: '826485359922',
+  appId: '1:826485359922:web:8f31f1e1f67ca36222c32b',
 };
 
 export const isFirebaseConfigured = !firebaseConfig.apiKey.startsWith('YOUR_');

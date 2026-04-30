@@ -275,9 +275,10 @@ interface Props {
   firstTrackedDay: string;
   onClose: () => void;
   onSave: (profile: UserProfile) => void;
+  onReset: () => void;
 }
 
-export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props) {
+export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset }: Props) {
   const today = todayStr();
 
   const [sWeight, setSWeight] = useState('');
@@ -494,6 +495,12 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props
               const older = arr[i + 1];
               const change = older ? older.weight - entry.weight : null;
               const isLast = i === arr.length - 1;
+              // isLast = the start entry (not deletable); others are in weightEntries
+              const entryIndex = profile.weightEntries.length - 1 - i;
+              const handleDelete = () => {
+                const updated = profile.weightEntries.filter((_, idx) => idx !== entryIndex);
+                onSave({ ...profile, weightEntries: updated });
+              };
               return (
                 <div key={entry.date} style={{
                   display: 'flex',
@@ -505,7 +512,7 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props
                   <span style={{ fontSize: '13px', color: '#94a3b8' }}>
                     {fmt(entry.date)}{isLast ? ' · Start' : ''}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {change !== null && (
                       <span style={{ fontSize: '12px', color: change > 0 ? '#2ECC71' : '#E8453C' }}>
                         {change > 0 ? `−${change.toFixed(1)}` : `+${Math.abs(change).toFixed(1)}`} kg
@@ -514,6 +521,17 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props
                     <span style={{ fontSize: '15px', fontWeight: 600, color: '#f1f5f9' }}>
                       {entry.weight.toFixed(1)} kg
                     </span>
+                    {!isLast && (
+                      <button onClick={handleDelete} style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#475569',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        padding: '2px 4px',
+                        lineHeight: 1,
+                      }}>✕</button>
+                    )}
                   </div>
                 </div>
               );
@@ -521,6 +539,14 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props
           </div>
         </div>
       )}
+
+      {/* Reset */}
+      <button
+        onClick={() => { if (window.confirm('Profil wirklich löschen?')) onReset(); }}
+        style={{ ...btnGhost, width: '100%', textAlign: 'center', color: '#E8453C', borderColor: 'rgba(232,69,60,0.2)', marginTop: '4px' }}
+      >
+        Profil zurücksetzen
+      </button>
     </Overlay>
   );
 }

@@ -18,7 +18,7 @@ export function App() {
   const [month, setMonth] = useState(3); // April
   const [showWeight, setShowWeight] = useState(false);
   const { days, sync, toggleDay } = useCalendarData(userCode);
-  const { profile, saveProfile } = useProfile(userCode);
+  const { profile, saveProfile, resetProfile } = useProfile(userCode);
   const firstTrackedDay = Object.keys(days).sort()[0] ?? TODAY;
   const checkInDue = profile ? isCheckInDue(profile, firstTrackedDay) : false;
 
@@ -193,6 +193,7 @@ export function App() {
           firstTrackedDay={firstTrackedDay}
           onClose={() => setShowWeight(false)}
           onSave={saveProfile}
+          onReset={resetProfile}
         />
       )}
     </div>

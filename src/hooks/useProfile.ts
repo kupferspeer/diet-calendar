@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase';
 import { UserProfile } from '../types';
 
@@ -32,5 +32,13 @@ export function useProfile(code: string | null) {
     await setDoc(doc(db, 'profiles', code), updated);
   };
 
-  return { profile, saveProfile };
+  const resetProfile = async () => {
+    if (!code) return;
+    setProfile(null);
+    localStorage.removeItem(lsKey(code));
+    if (!isFirebaseConfigured || !db) return;
+    await deleteDoc(doc(db, 'profiles', code));
+  };
+
+  return { profile, saveProfile, resetProfile };
 }

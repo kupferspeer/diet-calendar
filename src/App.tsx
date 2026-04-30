@@ -19,7 +19,8 @@ export function App() {
   const [showWeight, setShowWeight] = useState(false);
   const { days, sync, toggleDay } = useCalendarData(userCode);
   const { profile, saveProfile } = useProfile(userCode);
-  const checkInDue = profile ? isCheckInDue(profile) : false;
+  const firstTrackedDay = Object.keys(days).sort()[0] ?? TODAY;
+  const checkInDue = profile ? isCheckInDue(profile, firstTrackedDay) : false;
 
   if (!userCode) {
     return (
@@ -189,6 +190,7 @@ export function App() {
       {showWeight && (
         <WeightStats
           profile={profile}
+          firstTrackedDay={firstTrackedDay}
           onClose={() => setShowWeight(false)}
           onSave={saveProfile}
         />

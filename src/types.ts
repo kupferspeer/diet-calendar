@@ -13,7 +13,6 @@ export interface WeightEntry {
 
 export interface UserProfile {
   startWeight: number;
-  startDate: string;
   targetCalories: number;
   weightEntries: WeightEntry[];
 }

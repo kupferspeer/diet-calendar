@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { UserProfile, WeightEntry } from '../types';
 
-// First 3 check-ins every 2 months, then every 6 months
-function nextCheckInDays(doneCount: number) {
-  return doneCount < 3 ? 60 : 180;
+// Cumulative offset in days from firstTrackedDay for the next check-in.
+// Check-ins 1–3: day 60 / 120 / 180  (every 2 months)
+// Check-ins 4+:  day 360 / 540 / …   (every 6 months)
+function nextCheckInOffset(doneCount: number): number {
+  if (doneCount < 3) return (doneCount + 1) * 60;
+  return (doneCount - 1) * 180;
 }
 
 function todayStr() {
@@ -38,12 +41,10 @@ function calorieHint(lossKg: number, periodDays: number): { msg: string; color: 
   return null;
 }
 
-export function isCheckInDue(profile: UserProfile): boolean {
+export function isCheckInDue(profile: UserProfile, firstTrackedDay: string): boolean {
   const doneCount = profile.weightEntries.length;
-  const lastDate = doneCount > 0
-    ? profile.weightEntries[doneCount - 1].date
-    : profile.startDate;
-  return daysBetween(lastDate, todayStr()) >= nextCheckInDays(doneCount);
+  const nextCheckIn = addDays(firstTrackedDay, nextCheckInOffset(doneCount));
+  return daysBetween(todayStr(), nextCheckIn) <= 0;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -271,15 +272,15 @@ function MiniStat({ label: l, value, color }: { label: string; value: string; co
 
 interface Props {
   profile: UserProfile | null;
+  firstTrackedDay: string;
   onClose: () => void;
   onSave: (profile: UserProfile) => void;
 }
 
-export function WeightStats({ profile, onClose, onSave }: Props) {
+export function WeightStats({ profile, firstTrackedDay, onClose, onSave }: Props) {
   const today = todayStr();
 
   const [sWeight, setSWeight] = useState('');
-  const [sDate, setSDate] = useState(today);
   const [sCal, setSCal] = useState('2300');
 
   const [showAdd, setShowAdd] = useState(false);
@@ -292,8 +293,8 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
   const handleSetup = () => {
     const w = parseFloat(sWeight.replace(',', '.'));
     const c = parseInt(sCal, 10);
-    if (isNaN(w) || w <= 0 || !sDate || isNaN(c) || c <= 0) return;
-    onSave({ startWeight: w, startDate: sDate, targetCalories: c, weightEntries: [] });
+    if (isNaN(w) || w <= 0 || isNaN(c) || c <= 0) return;
+    onSave({ startWeight: w, targetCalories: c, weightEntries: [] });
   };
 
   const handleAddEntry = () => {
@@ -323,13 +324,12 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
         <div style={card}>
           <div style={labelStyle}>Profil einrichten</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>
+              Erfasst seit: <span style={{ color: '#94a3b8', fontWeight: 600 }}>{fmt(firstTrackedDay)}</span>
+            </div>
             <Field label="Startgewicht (kg)">
               <input type="number" step="0.1" min="30" max="300" placeholder="z.B. 92.5"
                 value={sWeight} onChange={e => setSWeight(e.target.value)} style={inputStyle} />
-            </Field>
-            <Field label="Seit wann?">
-              <input type="date" value={sDate} max={today}
-                onChange={e => setSDate(e.target.value)} style={inputStyle} />
             </Field>
             <Field label="Tägliches Kalorienziel (kcal)">
               <input type="number" step="50" min="1000" max="5000"
@@ -344,20 +344,17 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
 
   // ── Stats screen ──────────────────────────────────────────────────────────────
   const allEntries = [
-    { date: profile.startDate, weight: profile.startWeight },
+    { date: firstTrackedDay, weight: profile.startWeight },
     ...profile.weightEntries,
   ];
   const latest = allEntries[allEntries.length - 1];
   const totalLoss = profile.startWeight - latest.weight;
   const doneCount = profile.weightEntries.length;
 
-  const lastDate = allEntries[allEntries.length - 1].date;
-  const nextDays = nextCheckInDays(doneCount);
-  const nextCheckIn = addDays(lastDate, nextDays);
+  const nextCheckIn = addDays(firstTrackedDay, nextCheckInOffset(doneCount));
   const daysToCheckIn = daysBetween(today, nextCheckIn);
   const overdue = daysToCheckIn <= 0;
 
-  // Schedule hint text
   const scheduleHint = doneCount < 3
     ? `Check-in ${doneCount + 1} von 3 · danach alle 6 Monate`
     : 'Routine · alle 6 Monate';
@@ -374,7 +371,10 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
 
       {/* Overview */}
       <div style={card}>
-        <div style={labelStyle}>Übersicht</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+          <div style={{ ...labelStyle, marginBottom: 0 }}>Übersicht</div>
+          <div style={{ fontSize: '11px', color: '#334155' }}>seit {fmt(firstTrackedDay)}</div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: allEntries.length >= 2 ? '16px' : 0 }}>
           <MiniStat label="Start" value={`${profile.startWeight.toFixed(1)} kg`} color="#94a3b8" />
           <MiniStat label="Aktuell" value={`${latest.weight.toFixed(1)} kg`} color="#f1f5f9" />

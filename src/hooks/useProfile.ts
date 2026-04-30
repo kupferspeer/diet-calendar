@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase';
 import { UserProfile } from '../types';
 
@@ -15,13 +15,18 @@ export function useProfile(code: string | null) {
       try { setProfile(JSON.parse(stored)); } catch {}
     }
     if (!isFirebaseConfigured || !db) return;
-    getDoc(doc(db, 'profiles', code)).then((snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as UserProfile;
-        setProfile(data);
-        localStorage.setItem(lsKey(code), JSON.stringify(data));
-      }
-    }).catch(() => {});
+    const unsub = onSnapshot(
+      doc(db, 'profiles', code),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as UserProfile;
+          setProfile(data);
+          localStorage.setItem(lsKey(code), JSON.stringify(data));
+        }
+      },
+      () => {}
+    );
+    return unsub;
   }, [code]);
 
   const saveProfile = async (updated: UserProfile) => {

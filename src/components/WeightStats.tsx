@@ -401,6 +401,18 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
           />
         </div>
         <WeightChart entries={allEntries} startWeight={profile.startWeight} />
+        {hint && (
+          <div style={{
+            marginTop: '12px',
+            padding: '8px 12px',
+            background: 'rgba(255,255,255,0.04)',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: hint.color,
+          }}>
+            {hint.msg}
+          </div>
+        )}
       </div>
 
       {/* Calorie target */}
@@ -424,18 +436,6 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
               onClick={() => { setNewCal(String(profile.targetCalories)); setEditCal(true); }}>
               Anpassen
             </button>
-          </div>
-        )}
-        {hint && (
-          <div style={{
-            marginTop: '10px',
-            padding: '8px 12px',
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: hint.color,
-          }}>
-            {hint.msg}
           </div>
         )}
       </div>

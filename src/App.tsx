@@ -3,7 +3,9 @@ import { Calendar } from './components/Calendar';
 import { Stats } from './components/Stats';
 import { SyncStatus } from './components/SyncStatus';
 import { CodeEntry } from './components/CodeEntry';
+import { WeightStats, isCheckInDue } from './components/WeightStats';
 import { useCalendarData } from './hooks/useCalendarData';
+import { useProfile } from './hooks/useProfile';
 import { isFirebaseConfigured } from './firebase';
 
 const now = new Date();
@@ -14,7 +16,10 @@ export function App() {
   const [userCode, setUserCode] = useState<string | null>(() => localStorage.getItem(LS_CODE_KEY));
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(3); // April
+  const [showWeight, setShowWeight] = useState(false);
   const { days, sync, toggleDay } = useCalendarData(userCode);
+  const { profile, saveProfile } = useProfile(userCode);
+  const checkInDue = profile ? isCheckInDue(profile) : false;
 
   if (!userCode) {
     return (
@@ -62,7 +67,42 @@ export function App() {
           }}>
             Diät-Kalender
           </h1>
-          <SyncStatus sync={sync} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SyncStatus sync={sync} />
+            <button
+              onClick={() => setShowWeight(true)}
+              style={{
+                position: 'relative',
+                background: 'none',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                color: '#64748b',
+                fontSize: '18px',
+                cursor: 'pointer',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Gewichtsprofil"
+            >
+              ⚖
+              {checkInDue && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#E8453C',
+                  border: '2px solid #0f172a',
+                  display: 'block',
+                }} />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Active code + change button */}
@@ -145,6 +185,14 @@ export function App() {
           ))}
         </div>
       </div>
+
+      {showWeight && (
+        <WeightStats
+          profile={profile}
+          onClose={() => setShowWeight(false)}
+          onSave={saveProfile}
+        />
+      )}
     </div>
   );
 }

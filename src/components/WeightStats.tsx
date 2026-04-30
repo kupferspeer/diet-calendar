@@ -291,6 +291,10 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
   const [editCal, setEditCal] = useState(false);
   const [newCal, setNewCal] = useState('');
 
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editWeight, setEditWeight] = useState('');
+  const [editDate, setEditDate] = useState('');
+
   const handleSetup = () => {
     const w = parseFloat(sWeight.replace(',', '.'));
     const c = parseInt(sCal, 10);
@@ -308,6 +312,17 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
     setShowAdd(false);
     setEWeight('');
     setEDate(today);
+  };
+
+  const handleEditSave = (idx: number) => {
+    if (!profile) return;
+    const w = parseFloat(editWeight.replace(',', '.'));
+    if (isNaN(w) || w <= 0 || !editDate) return;
+    const updated = profile.weightEntries
+      .map((e, i) => i === idx ? { date: editDate, weight: w } : e)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    onSave({ ...profile, weightEntries: updated });
+    setEditingIdx(null);
   };
 
   const handleSaveCal = () => {
@@ -490,29 +505,50 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
       {allEntries.length > 1 && (
         <div style={card}>
           <div style={labelStyle}>Verlauf</div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ maxHeight: '220px', overflowY: 'auto', marginRight: '-4px', paddingRight: '4px' }}>
             {[...allEntries].reverse().map((entry, i, arr) => {
               const older = arr[i + 1];
               const change = older ? older.weight - entry.weight : null;
-              const isLast = i === arr.length - 1;
-              // isLast = the start entry (not deletable); others are in weightEntries
-              const entryIndex = profile.weightEntries.length - 1 - i;
-              const handleDelete = () => {
-                const updated = profile.weightEntries.filter((_, idx) => idx !== entryIndex);
-                onSave({ ...profile, weightEntries: updated });
-              };
+              const isStart = i === arr.length - 1;
+              const entryIdx = profile.weightEntries.length - 1 - i;
+              const isEditing = !isStart && editingIdx === entryIdx;
+
+              if (isEditing) {
+                return (
+                  <div key={entry.date} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input type="number" step="0.1" min="30" max="300"
+                        value={editWeight} onChange={e => setEditWeight(e.target.value)}
+                        style={{ ...inputStyle, flex: '1 1 80px', fontSize: '14px', padding: '7px 10px' }}
+                        autoFocus />
+                      <input type="date" value={editDate} max={today}
+                        onChange={e => setEditDate(e.target.value)}
+                        style={{ ...inputStyle, flex: '1 1 110px', fontSize: '14px', padding: '7px 10px' }} />
+                      <button onClick={() => handleEditSave(entryIdx)}
+                        style={{ ...btnGhost, padding: '7px 10px', color: '#2ECC71', borderColor: 'rgba(46,204,113,0.3)', flexShrink: 0 }}>
+                        ✓
+                      </button>
+                      <button onClick={() => setEditingIdx(null)}
+                        style={{ ...btnGhost, padding: '7px 10px', flexShrink: 0 }}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={entry.date} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '10px 0',
-                  borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                  borderBottom: isStart ? 'none' : '1px solid rgba(255,255,255,0.05)',
                 }}>
                   <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-                    {fmt(entry.date)}{isLast ? ' · Start' : ''}
+                    {fmt(entry.date)}{isStart ? ' · Start' : ''}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {change !== null && (
                       <span style={{ fontSize: '12px', color: change > 0 ? '#2ECC71' : '#E8453C' }}>
                         {change > 0 ? `−${change.toFixed(1)}` : `+${Math.abs(change).toFixed(1)}`} kg
@@ -521,16 +557,21 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
                     <span style={{ fontSize: '15px', fontWeight: 600, color: '#f1f5f9' }}>
                       {entry.weight.toFixed(1)} kg
                     </span>
-                    {!isLast && (
-                      <button onClick={handleDelete} style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#475569',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        padding: '2px 4px',
-                        lineHeight: 1,
-                      }}>✕</button>
+                    {!isStart && (
+                      <>
+                        <button
+                          onClick={() => { setEditingIdx(entryIdx); setEditWeight(String(entry.weight)); setEditDate(entry.date); }}
+                          style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '15px', padding: '4px', lineHeight: 1 }}
+                          title="Bearbeiten">
+                          ✏
+                        </button>
+                        <button
+                          onClick={() => onSave({ ...profile, weightEntries: profile.weightEntries.filter((_, idx) => idx !== entryIdx) })}
+                          style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '14px', padding: '4px', lineHeight: 1 }}
+                          title="Löschen">
+                          ✕
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

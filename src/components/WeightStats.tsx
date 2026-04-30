@@ -35,9 +35,9 @@ function addDays(dateStr: string, days: number) {
 
 function calorieHint(lossKg: number, periodDays: number): { msg: string; color: string } | null {
   const expected = (0.5 / 7) * periodDays;
-  if (lossKg < expected * 0.5) return { msg: '−200 kcal/Tag empfohlen', color: '#E8453C' };
-  if (lossKg < expected * 0.75) return { msg: '−100 kcal/Tag empfohlen', color: '#fbbf24' };
-  if (lossKg > expected * 1.4) return { msg: '+100 kcal/Tag empfohlen (zu schnell)', color: '#fbbf24' };
+  if (lossKg < expected * 0.5) return { msg: 'Kalorienziel um 200 kcal/Tag senken', color: '#E8453C' };
+  if (lossKg < expected * 0.75) return { msg: 'Kalorienziel um 100 kcal/Tag senken', color: '#fbbf24' };
+  if (lossKg > expected * 1.4) return { msg: 'Kalorienziel um 100 kcal/Tag erhöhen — Abnahme zu schnell', color: '#fbbf24' };
   return null;
 }
 
@@ -435,7 +435,7 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
             fontSize: '13px',
             color: hint.color,
           }}>
-            Empfehlung: {hint.msg}
+            {hint.msg}
           </div>
         )}
       </div>

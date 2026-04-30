@@ -108,7 +108,7 @@ const btnGhost: React.CSSProperties = {
 
 interface ChartEntry { date: string; weight: number; }
 
-function WeightChart({ entries, startWeight }: { entries: ChartEntry[]; startWeight: number }) {
+function WeightChart({ entries, startWeight, masked }: { entries: ChartEntry[]; startWeight: number; masked: boolean }) {
   if (entries.length < 2) return null;
 
   const VW = 300;
@@ -175,14 +175,13 @@ function WeightChart({ entries, startWeight }: { entries: ChartEntry[]; startWei
         {/* Dots + labels */}
         {pts.map((p, i) => (
           <g key={p.date}>
-            {/* Weight label above dot */}
-            <text x={p.x} y={p.y - 9} textAnchor="middle"
-              fontSize="8" fill="#e2e8f0" fontFamily="DM Sans, sans-serif" fontWeight="600">
-              {p.weight.toFixed(1)}
-            </text>
-            {/* Dot */}
+            {!masked && (
+              <text x={p.x} y={p.y - 9} textAnchor="middle"
+                fontSize="8" fill="#e2e8f0" fontFamily="DM Sans, sans-serif" fontWeight="600">
+                {p.weight.toFixed(1)}
+              </text>
+            )}
             <circle cx={p.x} cy={p.y} r="4.5" fill="#3B82F6" stroke="#1e293b" strokeWidth="2" />
-            {/* Date label below chart */}
             {showLabel(i) && (
               <text x={p.x} y={VH - 3} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}
                 fontSize="7.5" fill="#475569" fontFamily="DM Sans, sans-serif">
@@ -216,7 +215,12 @@ function ChartLegend({ color, label, dashed }: { color: string; label: string; d
 
 // ── Helper sub-components ─────────────────────────────────────────────────────
 
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Overlay({ children, onClose, masked, onToggleMask }: {
+  children: React.ReactNode;
+  onClose: () => void;
+  masked: boolean;
+  onToggleMask: () => void;
+}) {
   return (
     <div style={{
       position: 'fixed',
@@ -240,9 +244,22 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
           }}>
             Gewichtsprofil
           </h2>
-          <button onClick={onClose} style={{ ...btnGhost, padding: '8px 14px' }}>
-            Schließen
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={onToggleMask}
+              title={masked ? 'Werte anzeigen' : 'Werte verstecken'}
+              style={{
+                ...btnGhost,
+                padding: '8px 12px',
+                fontSize: '17px',
+                opacity: masked ? 0.5 : 1,
+              }}>
+              🔑
+            </button>
+            <button onClick={onClose} style={{ ...btnGhost, padding: '8px 14px' }}>
+              Schließen
+            </button>
+          </div>
         </div>
         {children}
       </div>
@@ -295,6 +312,9 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
   const [editWeight, setEditWeight] = useState('');
   const [editDate, setEditDate] = useState('');
 
+  const [masked, setMasked] = useState(true);
+  const hide = (val: string) => masked ? '●●●' : val;
+
   const handleSetup = () => {
     const w = parseFloat(sWeight.replace(',', '.'));
     const c = parseInt(sCal, 10);
@@ -336,7 +356,7 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
   // ── Setup screen ─────────────────────────────────────────────────────────────
   if (!profile) {
     return (
-      <Overlay onClose={onClose}>
+      <Overlay onClose={onClose} masked={false} onToggleMask={() => {}}>
         <div style={card}>
           <div style={labelStyle}>Profil einrichten</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -382,7 +402,7 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
   }
 
   return (
-    <Overlay onClose={onClose}>
+    <Overlay onClose={onClose} masked={masked} onToggleMask={() => setMasked(m => !m)}>
 
       {/* Overview */}
       <div style={card}>
@@ -391,15 +411,15 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
           <div style={{ fontSize: '11px', color: '#334155' }}>seit {fmt(firstTrackedDay)}</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: allEntries.length >= 2 ? '16px' : 0 }}>
-          <MiniStat label="Start" value={`${profile.startWeight.toFixed(1)} kg`} color="#94a3b8" />
-          <MiniStat label="Aktuell" value={`${latest.weight.toFixed(1)} kg`} color="#f1f5f9" />
+          <MiniStat label="Start" value={hide(`${profile.startWeight.toFixed(1)} kg`)} color="#94a3b8" />
+          <MiniStat label="Aktuell" value={hide(`${latest.weight.toFixed(1)} kg`)} color="#f1f5f9" />
           <MiniStat
             label="Abgenommen"
-            value={totalLoss >= 0 ? `−${totalLoss.toFixed(1)} kg` : `+${Math.abs(totalLoss).toFixed(1)} kg`}
+            value={hide(totalLoss >= 0 ? `−${totalLoss.toFixed(1)} kg` : `+${Math.abs(totalLoss).toFixed(1)} kg`)}
             color={totalLoss > 0 ? '#2ECC71' : '#E8453C'}
           />
         </div>
-        <WeightChart entries={allEntries} startWeight={profile.startWeight} />
+        <WeightChart entries={allEntries} startWeight={profile.startWeight} masked={masked} />
         {hint && (
           <div style={{
             marginTop: '12px',
@@ -428,8 +448,8 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '26px', fontWeight: 700, color: '#f1f5f9' }}>
-              {profile.targetCalories}
-              <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>kcal/Tag</span>
+              {hide(String(profile.targetCalories))}
+              <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>{masked ? '' : 'kcal/Tag'}</span>
             </span>
             <button style={{ ...btnGhost, padding: '6px 12px', fontSize: '12px' }}
               onClick={() => { setNewCal(String(profile.targetCalories)); setEditCal(true); }}>
@@ -549,13 +569,13 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
                     {fmt(entry.date)}{isStart ? ' · Start' : ''}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {change !== null && (
+                    {change !== null && !masked && (
                       <span style={{ fontSize: '12px', color: change > 0 ? '#2ECC71' : '#E8453C' }}>
                         {change > 0 ? `−${change.toFixed(1)}` : `+${Math.abs(change).toFixed(1)}`} kg
                       </span>
                     )}
                     <span style={{ fontSize: '15px', fontWeight: 600, color: '#f1f5f9' }}>
-                      {entry.weight.toFixed(1)} kg
+                      {hide(`${entry.weight.toFixed(1)} kg`)}
                     </span>
                     {!isStart && (
                       <>

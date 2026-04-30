@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { UserProfile, WeightEntry } from '../types';
 
-const CHECK_IN_DAYS = 60;
+// First 3 check-ins every 2 months, then every 6 months
+function nextCheckInDays(doneCount: number) {
+  return doneCount < 3 ? 60 : 180;
+}
 
 function todayStr() {
   const n = new Date();
@@ -17,6 +20,10 @@ function fmt(d: string) {
   return `${dd}.${m}.${y}`;
 }
 
+function shortDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+}
+
 function addDays(dateStr: string, days: number) {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
@@ -24,18 +31,19 @@ function addDays(dateStr: string, days: number) {
 }
 
 function calorieHint(lossKg: number, periodDays: number): { msg: string; color: string } | null {
-  const expected = (4 / 60) * periodDays;
+  const expected = (0.5 / 7) * periodDays;
   if (lossKg < expected * 0.5) return { msg: '−200 kcal/Tag empfohlen', color: '#E8453C' };
   if (lossKg < expected * 0.75) return { msg: '−100 kcal/Tag empfohlen', color: '#fbbf24' };
-  if (lossKg > expected * 1.3) return { msg: '+100 kcal/Tag (zu schnell — ggf. erhöhen)', color: '#fbbf24' };
+  if (lossKg > expected * 1.4) return { msg: '+100 kcal/Tag empfohlen (zu schnell)', color: '#fbbf24' };
   return null;
 }
 
 export function isCheckInDue(profile: UserProfile): boolean {
-  const last = profile.weightEntries.length > 0
-    ? profile.weightEntries[profile.weightEntries.length - 1].date
+  const doneCount = profile.weightEntries.length;
+  const lastDate = doneCount > 0
+    ? profile.weightEntries[doneCount - 1].date
     : profile.startDate;
-  return daysBetween(last, todayStr()) >= CHECK_IN_DAYS;
+  return daysBetween(lastDate, todayStr()) >= nextCheckInDays(doneCount);
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -95,7 +103,117 @@ const btnGhost: React.CSSProperties = {
   fontFamily: "'DM Sans', sans-serif",
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Chart ─────────────────────────────────────────────────────────────────────
+
+interface ChartEntry { date: string; weight: number; }
+
+function WeightChart({ entries, startWeight }: { entries: ChartEntry[]; startWeight: number }) {
+  if (entries.length < 2) return null;
+
+  const VW = 300;
+  const VH = 130;
+  const PAD = { top: 22, right: 12, bottom: 22, left: 12 };
+  const iW = VW - PAD.left - PAD.right;
+  const iH = VH - PAD.top - PAD.bottom;
+
+  const startT = new Date(entries[0].date).getTime();
+  const lastT = new Date(entries[entries.length - 1].date).getTime();
+  const tRange = lastT - startT || 1;
+
+  // Expected weight (−0.5 kg/week)
+  const expectedAt = (dateStr: string) => {
+    const days = (new Date(dateStr).getTime() - startT) / 86400000;
+    return startWeight - (0.5 / 7) * days;
+  };
+
+  const expWeights = entries.map(e => expectedAt(e.date));
+  const allW = [...entries.map(e => e.weight), ...expWeights];
+  const minW = Math.min(...allW) - 0.8;
+  const maxW = Math.max(...allW) + 0.8;
+  const wRange = maxW - minW || 1;
+
+  const toX = (dateStr: string) =>
+    PAD.left + ((new Date(dateStr).getTime() - startT) / tRange) * iW;
+
+  // Higher weight = top of chart (y small), lower weight = bottom (y large)
+  const toY = (w: number) => PAD.top + ((maxW - w) / wRange) * iH;
+
+  const pts = entries.map(e => ({ x: toX(e.date), y: toY(e.weight), ...e }));
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  // Expected line (dashed)
+  const expPath = entries.map((e, i) => {
+    const x = toX(e.date);
+    const y = toY(expectedAt(e.date));
+    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  // Show date labels only at first + last (+ middle if ≤ 4 entries)
+  const showLabel = (i: number) =>
+    i === 0 || i === pts.length - 1 || pts.length <= 4;
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width: '100%', display: 'block' }}>
+        {/* Grid lines (subtle) */}
+        {[0.25, 0.5, 0.75].map(f => (
+          <line key={f}
+            x1={PAD.left} y1={PAD.top + f * iH}
+            x2={PAD.left + iW} y2={PAD.top + f * iH}
+            stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+        ))}
+
+        {/* Expected trajectory */}
+        <path d={expPath} fill="none" stroke="#2ECC71"
+          strokeWidth="1.2" strokeDasharray="5 3" opacity="0.55" />
+
+        {/* Actual line */}
+        <path d={pathD} fill="none" stroke="#3B82F6"
+          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Dots + labels */}
+        {pts.map((p, i) => (
+          <g key={p.date}>
+            {/* Weight label above dot */}
+            <text x={p.x} y={p.y - 9} textAnchor="middle"
+              fontSize="8" fill="#e2e8f0" fontFamily="DM Sans, sans-serif" fontWeight="600">
+              {p.weight.toFixed(1)}
+            </text>
+            {/* Dot */}
+            <circle cx={p.x} cy={p.y} r="4.5" fill="#3B82F6" stroke="#1e293b" strokeWidth="2" />
+            {/* Date label below chart */}
+            {showLabel(i) && (
+              <text x={p.x} y={VH - 3} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}
+                fontSize="7.5" fill="#475569" fontFamily="DM Sans, sans-serif">
+                {shortDate(p.date)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '6px' }}>
+        <ChartLegend color="#3B82F6" label="Ist" dashed={false} />
+        <ChartLegend color="#2ECC71" label="Soll (−0,5 kg/Wo.)" dashed={true} />
+      </div>
+    </div>
+  );
+}
+
+function ChartLegend({ color, label, dashed }: { color: string; label: string; dashed: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#64748b' }}>
+      <svg width="18" height="6" style={{ flexShrink: 0 }}>
+        <line x1="0" y1="3" x2="18" y2="3" stroke={color} strokeWidth="2"
+          strokeDasharray={dashed ? '4 2' : undefined} />
+      </svg>
+      {label}
+    </div>
+  );
+}
+
+// ── Helper sub-components ─────────────────────────────────────────────────────
 
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
@@ -198,7 +316,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
     setEditCal(false);
   };
 
-  // ── Setup screen ────────────────────────────────────────────────────────────
+  // ── Setup screen ─────────────────────────────────────────────────────────────
   if (!profile) {
     return (
       <Overlay onClose={onClose}>
@@ -207,8 +325,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <Field label="Startgewicht (kg)">
               <input type="number" step="0.1" min="30" max="300" placeholder="z.B. 92.5"
-                value={sWeight} onChange={e => setSWeight(e.target.value)}
-                style={inputStyle} />
+                value={sWeight} onChange={e => setSWeight(e.target.value)} style={inputStyle} />
             </Field>
             <Field label="Seit wann?">
               <input type="date" value={sDate} max={today}
@@ -225,18 +342,25 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
     );
   }
 
-  // ── Stats screen ────────────────────────────────────────────────────────────
+  // ── Stats screen ──────────────────────────────────────────────────────────────
   const allEntries = [
     { date: profile.startDate, weight: profile.startWeight },
     ...profile.weightEntries,
   ];
   const latest = allEntries[allEntries.length - 1];
   const totalLoss = profile.startWeight - latest.weight;
+  const doneCount = profile.weightEntries.length;
 
-  const lastCheckInDate = allEntries[allEntries.length - 1].date;
-  const nextCheckIn = addDays(lastCheckInDate, CHECK_IN_DAYS);
+  const lastDate = allEntries[allEntries.length - 1].date;
+  const nextDays = nextCheckInDays(doneCount);
+  const nextCheckIn = addDays(lastDate, nextDays);
   const daysToCheckIn = daysBetween(today, nextCheckIn);
   const overdue = daysToCheckIn <= 0;
+
+  // Schedule hint text
+  const scheduleHint = doneCount < 3
+    ? `Check-in ${doneCount + 1} von 3 · danach alle 6 Monate`
+    : 'Routine · alle 6 Monate';
 
   let hint: { msg: string; color: string } | null = null;
   if (allEntries.length >= 2) {
@@ -251,7 +375,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
       {/* Overview */}
       <div style={card}>
         <div style={labelStyle}>Übersicht</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: allEntries.length >= 2 ? '16px' : 0 }}>
           <MiniStat label="Start" value={`${profile.startWeight.toFixed(1)} kg`} color="#94a3b8" />
           <MiniStat label="Aktuell" value={`${latest.weight.toFixed(1)} kg`} color="#f1f5f9" />
           <MiniStat
@@ -260,6 +384,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
             color={totalLoss > 0 ? '#2ECC71' : '#E8453C'}
           />
         </div>
+        <WeightChart entries={allEntries} startWeight={profile.startWeight} />
       </div>
 
       {/* Calorie target */}
@@ -294,7 +419,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
             fontSize: '13px',
             color: hint.color,
           }}>
-            Empfehlung nach letztem Check-in: {hint.msg}
+            Empfehlung: {hint.msg}
           </div>
         )}
       </div>
@@ -313,6 +438,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
                 ? `${Math.abs(daysToCheckIn)} Tag${Math.abs(daysToCheckIn) !== 1 ? 'e' : ''} überfällig`
                 : `in ${daysToCheckIn} Tagen`}
             </div>
+            <div style={{ color: '#334155', fontSize: '11px', marginTop: '4px' }}>{scheduleHint}</div>
           </div>
           {overdue && (
             <span style={{
@@ -340,7 +466,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
                 value={eWeight} onChange={e => setEWeight(e.target.value)}
                 style={inputStyle} autoFocus />
             </Field>
-            <Field label="Datum">
+            <Field label="Datum (frei wählbar)">
               <input type="date" value={eDate} max={today}
                 onChange={e => setEDate(e.target.value)} style={inputStyle} />
             </Field>
@@ -377,7 +503,7 @@ export function WeightStats({ profile, onClose, onSave }: Props) {
                   borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
                 }}>
                   <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-                    {fmt(entry.date)}{isLast ? ' (Start)' : ''}
+                    {fmt(entry.date)}{isLast ? ' · Start' : ''}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {change !== null && (

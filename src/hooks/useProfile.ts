@@ -22,6 +22,9 @@ export function useProfile(code: string | null) {
           const data = snap.data() as UserProfile;
           setProfile(data);
           localStorage.setItem(lsKey(code), JSON.stringify(data));
+        } else {
+          setProfile(null);
+          localStorage.removeItem(lsKey(code));
         }
       },
       () => {}

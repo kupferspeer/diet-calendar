@@ -516,21 +516,22 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
               if (isEditing) {
                 return (
                   <div key={entry.date} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                       <input type="number" step="0.1" min="30" max="300"
                         value={editWeight} onChange={e => setEditWeight(e.target.value)}
-                        style={{ ...inputStyle, flex: '1 1 80px', fontSize: '14px', padding: '7px 10px' }}
-                        autoFocus />
+                        style={{ ...inputStyle, flex: 1, minWidth: 0, width: 'auto', padding: '8px 10px' }} />
                       <input type="date" value={editDate} max={today}
                         onChange={e => setEditDate(e.target.value)}
-                        style={{ ...inputStyle, flex: '1 1 110px', fontSize: '14px', padding: '7px 10px' }} />
+                        style={{ ...inputStyle, flex: 1, minWidth: 0, width: 'auto', padding: '8px 10px' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={() => handleEditSave(entryIdx)}
-                        style={{ ...btnGhost, padding: '7px 10px', color: '#2ECC71', borderColor: 'rgba(46,204,113,0.3)', flexShrink: 0 }}>
-                        ✓
+                        style={{ ...btnGhost, flex: 1, textAlign: 'center', color: '#2ECC71', borderColor: 'rgba(46,204,113,0.3)' }}>
+                        ✓ Speichern
                       </button>
                       <button onClick={() => setEditingIdx(null)}
-                        style={{ ...btnGhost, padding: '7px 10px', flexShrink: 0 }}>
-                        ✕
+                        style={{ ...btnGhost, flex: 1, textAlign: 'center' }}>
+                        Abbrechen
                       </button>
                     </div>
                   </div>

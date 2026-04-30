@@ -375,11 +375,10 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
     ? `Check-in ${doneCount + 1} von 3 · danach alle 6 Monate`
     : 'Routine · alle 6 Monate';
 
+  const totalDays = daysBetween(firstTrackedDay, today);
   let hint: { msg: string; color: string } | null = null;
-  if (allEntries.length >= 2) {
-    const prev = allEntries[allEntries.length - 2];
-    const curr = allEntries[allEntries.length - 1];
-    hint = calorieHint(prev.weight - curr.weight, daysBetween(prev.date, curr.date));
+  if (allEntries.length >= 2 && totalDays >= 60) {
+    hint = calorieHint(totalLoss, totalDays);
   }
 
   return (

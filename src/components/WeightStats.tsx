@@ -663,10 +663,10 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
 
       {/* Reset */}
       <button
-        onClick={() => { if (window.confirm('Profil wirklich löschen?')) onReset(); }}
+        onClick={() => { if (window.confirm('Gewichtsprofil wirklich löschen?')) onReset(); }}
         style={{ ...btnGhost, width: '100%', textAlign: 'center', color: '#E8453C', borderColor: 'rgba(232,69,60,0.2)', marginTop: '4px' }}
       >
-        Profil zurücksetzen
+        Gewichtsprofil zurücksetzen
       </button>
     </Overlay>
   );

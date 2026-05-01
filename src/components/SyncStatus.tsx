@@ -8,7 +8,7 @@ const LABELS = { synced: 'Gespeichert', syncing: 'Synchronisiere …', error: 'F
 export function SyncStatus({ sync }: { sync: SyncState }) {
   if (!isFirebaseConfigured) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
         <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#facc15' }} />
         Lokal
       </div>
@@ -16,7 +16,7 @@ export function SyncStatus({ sync }: { sync: SyncState }) {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
       <div style={{
         width: '7px',
         height: '7px',

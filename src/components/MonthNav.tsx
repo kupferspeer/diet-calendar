@@ -14,9 +14,9 @@ const btnStyle: React.CSSProperties = {
   width: '44px',
   height: '44px',
   borderRadius: '10px',
-  border: '1px solid rgba(255,255,255,0.1)',
-  background: 'rgba(255,255,255,0.05)',
-  color: '#f1f5f9',
+  border: '1px solid var(--btn-border)',
+  background: 'var(--surface-subtle)',
+  color: 'var(--text-primary)',
   fontSize: '18px',
   cursor: 'pointer',
   display: 'flex',
@@ -32,8 +32,8 @@ export function MonthNav({ year, month, onPrev, onNext }: Props) {
       <button
         onClick={onPrev}
         style={btnStyle}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; }}
         aria-label="Vorheriger Monat"
       >
         ◂
@@ -42,7 +42,7 @@ export function MonthNav({ year, month, onPrev, onNext }: Props) {
         margin: 0,
         fontFamily: "'Playfair Display', serif",
         fontSize: 'clamp(20px, 5.5vw, 28px)',
-        color: '#f1f5f9',
+        color: 'var(--text-primary)',
         letterSpacing: '-0.3px',
       }}>
         {MONTHS[month]} {year}
@@ -50,8 +50,8 @@ export function MonthNav({ year, month, onPrev, onNext }: Props) {
       <button
         onClick={onNext}
         style={btnStyle}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; }}
         aria-label="Nächster Monat"
       >
         ▸

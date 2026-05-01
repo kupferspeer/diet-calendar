@@ -27,7 +27,7 @@ export function DayCell({ day, dateStr, status, isToday, isFuture, onClick }: Pr
       style={{
         aspectRatio: '1',
         borderRadius: '10px',
-        background: cfg ? cfg.bg : 'rgba(255,255,255,0.04)',
+        background: cfg ? cfg.bg : 'var(--card-bg)',
         border: `2px solid ${isToday ? '#facc15' : 'transparent'}`,
         display: 'flex',
         flexDirection: 'column',
@@ -46,7 +46,7 @@ export function DayCell({ day, dateStr, status, isToday, isFuture, onClick }: Pr
     >
       <span style={{
         fontSize: 'clamp(11px, 2.8vw, 14px)',
-        color: cfg ? '#fff' : '#94a3b8',
+        color: cfg ? '#fff' : 'var(--text-secondary)',
         fontWeight: isToday ? 700 : 500,
         lineHeight: 1,
       }}>

@@ -10,15 +10,15 @@ interface Props {
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
 const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--card-bg)',
+  border: '1px solid var(--card-border)',
   borderRadius: '14px',
   padding: '16px',
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: '11px',
-  color: '#475569',
+  color: 'var(--text-faint)',
   fontWeight: 600,
   marginBottom: '14px',
   textTransform: 'uppercase',
@@ -66,7 +66,7 @@ export function Stats({ days, year, month }: Props) {
             borderRadius: '5px',
             overflow: 'hidden',
             display: 'flex',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--surface-subtle)',
           }}>
             {barOver  > 0 && <div style={{ width: `${barOver}%`,  background: '#E8453C', transition: 'width 0.4s ease' }} />}
             {barHit   > 0 && <div style={{ width: `${barHit}%`,   background: '#2ECC71', transition: 'width 0.4s ease' }} />}
@@ -87,14 +87,14 @@ function StatCell({ value, label, color }: { value: number | string; label: stri
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{label}</div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{label}</div>
     </div>
   );
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)' }}>
       <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: color, flexShrink: 0 }} />
       {label}
     </div>

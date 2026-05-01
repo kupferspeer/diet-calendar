@@ -50,8 +50,8 @@ export function isCheckInDue(profile: UserProfile, firstTrackedDay: string): boo
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const card: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--card-bg)',
+  border: '1px solid var(--card-border)',
   borderRadius: '14px',
   padding: '16px',
   marginBottom: '12px',
@@ -59,7 +59,7 @@ const card: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontSize: '11px',
-  color: '#475569',
+  color: 'var(--text-faint)',
   fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -67,11 +67,11 @@ const labelStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'var(--input-bg)',
+  border: '1px solid var(--input-border)',
   borderRadius: '8px',
   padding: '10px 12px',
-  color: '#f1f5f9',
+  color: 'var(--text-primary)',
   fontSize: '16px',
   width: '100%',
   boxSizing: 'border-box',
@@ -93,11 +93,11 @@ const btnPrimary: React.CSSProperties = {
 };
 
 const btnGhost: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--btn-ghost-bg)',
+  border: '1px solid var(--btn-border)',
   borderRadius: '10px',
   padding: '10px 16px',
-  color: '#94a3b8',
+  color: 'var(--text-secondary)',
   fontSize: '13px',
   fontWeight: 600,
   cursor: 'pointer',
@@ -107,99 +107,6 @@ const btnGhost: React.CSSProperties = {
 // ── Chart ─────────────────────────────────────────────────────────────────────
 
 interface ChartEntry { date: string; weight: number; }
-
-function WeightChart({ entries, startWeight, masked }: { entries: ChartEntry[]; startWeight: number; masked: boolean }) {
-  if (entries.length < 2) return null;
-
-  const VW = 300;
-  const VH = 130;
-  const PAD = { top: 22, right: 12, bottom: 22, left: 12 };
-  const iW = VW - PAD.left - PAD.right;
-  const iH = VH - PAD.top - PAD.bottom;
-
-  const startT = new Date(entries[0].date).getTime();
-  const lastT = new Date(entries[entries.length - 1].date).getTime();
-  const tRange = lastT - startT || 1;
-
-  // Expected weight (−0.5 kg/week)
-  const expectedAt = (dateStr: string) => {
-    const days = (new Date(dateStr).getTime() - startT) / 86400000;
-    return startWeight - (0.5 / 7) * days;
-  };
-
-  const expWeights = entries.map(e => expectedAt(e.date));
-  const allW = [...entries.map(e => e.weight), ...expWeights];
-  const minW = Math.min(...allW) - 0.8;
-  const maxW = Math.max(...allW) + 0.8;
-  const wRange = maxW - minW || 1;
-
-  const toX = (dateStr: string) =>
-    PAD.left + ((new Date(dateStr).getTime() - startT) / tRange) * iW;
-
-  // Higher weight = top of chart (y small), lower weight = bottom (y large)
-  const toY = (w: number) => PAD.top + ((maxW - w) / wRange) * iH;
-
-  const pts = entries.map(e => ({ x: toX(e.date), y: toY(e.weight), ...e }));
-  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-
-  // Expected line (dashed)
-  const expPath = entries.map((e, i) => {
-    const x = toX(e.date);
-    const y = toY(expectedAt(e.date));
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-
-  // Show date labels only at first + last (+ middle if ≤ 4 entries)
-  const showLabel = (i: number) =>
-    i === 0 || i === pts.length - 1 || pts.length <= 4;
-
-  return (
-    <div>
-      <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width: '100%', display: 'block' }}>
-        {/* Grid lines (subtle) */}
-        {[0.25, 0.5, 0.75].map(f => (
-          <line key={f}
-            x1={PAD.left} y1={PAD.top + f * iH}
-            x2={PAD.left + iW} y2={PAD.top + f * iH}
-            stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        ))}
-
-        {/* Expected trajectory */}
-        <path d={expPath} fill="none" stroke="#2ECC71"
-          strokeWidth="1.2" strokeDasharray="5 3" opacity="0.55" />
-
-        {/* Actual line */}
-        <path d={pathD} fill="none" stroke="#3B82F6"
-          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-        {/* Dots + labels */}
-        {pts.map((p, i) => (
-          <g key={p.date}>
-            {!masked && (
-              <text x={p.x} y={p.y - 9} textAnchor="middle"
-                fontSize="8" fill="#e2e8f0" fontFamily="DM Sans, sans-serif" fontWeight="600">
-                {p.weight.toFixed(1)}
-              </text>
-            )}
-            <circle cx={p.x} cy={p.y} r="4.5" fill="#3B82F6" stroke="#1e293b" strokeWidth="2" />
-            {showLabel(i) && (
-              <text x={p.x} y={VH - 3} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}
-                fontSize="7.5" fill="#475569" fontFamily="DM Sans, sans-serif">
-                {shortDate(p.date)}
-              </text>
-            )}
-          </g>
-        ))}
-      </svg>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '6px' }}>
-        <ChartLegend color="#3B82F6" label="Ist" dashed={false} />
-        <ChartLegend color="#2ECC71" label="Soll (−0,5 kg/Wo.)" dashed={true} />
-      </div>
-    </div>
-  );
-}
 
 function ColorBox({ color, sym }: { color: string; sym: string }) {
   return (
@@ -214,9 +121,92 @@ function ColorBox({ color, sym }: { color: string; sym: string }) {
   );
 }
 
+function WeightChart({ entries, startWeight, masked }: { entries: ChartEntry[]; startWeight: number; masked: boolean }) {
+  if (entries.length < 2) return null;
+
+  const VW = 300;
+  const VH = 130;
+  const PAD = { top: 22, right: 12, bottom: 22, left: 12 };
+  const iW = VW - PAD.left - PAD.right;
+  const iH = VH - PAD.top - PAD.bottom;
+
+  const startT = new Date(entries[0].date).getTime();
+  const lastT = new Date(entries[entries.length - 1].date).getTime();
+  const tRange = lastT - startT || 1;
+
+  const expectedAt = (dateStr: string) => {
+    const days = (new Date(dateStr).getTime() - startT) / 86400000;
+    return startWeight - (0.5 / 7) * days;
+  };
+
+  const expWeights = entries.map(e => expectedAt(e.date));
+  const allW = [...entries.map(e => e.weight), ...expWeights];
+  const minW = Math.min(...allW) - 0.8;
+  const maxW = Math.max(...allW) + 0.8;
+  const wRange = maxW - minW || 1;
+
+  const toX = (dateStr: string) =>
+    PAD.left + ((new Date(dateStr).getTime() - startT) / tRange) * iW;
+
+  const toY = (w: number) => PAD.top + ((maxW - w) / wRange) * iH;
+
+  const pts = entries.map(e => ({ x: toX(e.date), y: toY(e.weight), ...e }));
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  const expPath = entries.map((e, i) => {
+    const x = toX(e.date);
+    const y = toY(expectedAt(e.date));
+    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  const showLabel = (i: number) =>
+    i === 0 || i === pts.length - 1 || pts.length <= 4;
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width: '100%', display: 'block' }}>
+        {[0.25, 0.5, 0.75].map(f => (
+          <line key={f}
+            x1={PAD.left} y1={PAD.top + f * iH}
+            x2={PAD.left + iW} y2={PAD.top + f * iH}
+            style={{ stroke: 'var(--chart-grid)' }} strokeWidth="1" />
+        ))}
+        <path d={expPath} fill="none" stroke="#2ECC71"
+          strokeWidth="1.2" strokeDasharray="5 3" opacity="0.55" />
+        <path d={pathD} fill="none" stroke="#3B82F6"
+          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {pts.map((p, i) => (
+          <g key={p.date}>
+            {!masked && (
+              <text x={p.x} y={p.y - 9} textAnchor="middle"
+                fontSize="8" style={{ fill: 'var(--text-primary)' }}
+                fontFamily="DM Sans, sans-serif" fontWeight="600">
+                {p.weight.toFixed(1)}
+              </text>
+            )}
+            <circle cx={p.x} cy={p.y} r="4.5" fill="#3B82F6" stroke="var(--bg-deep)" strokeWidth="2" />
+            {showLabel(i) && (
+              <text x={p.x} y={VH - 3}
+                textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}
+                fontSize="7.5" style={{ fill: 'var(--text-faint)' }}
+                fontFamily="DM Sans, sans-serif">
+                {shortDate(p.date)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '6px' }}>
+        <ChartLegend color="#3B82F6" label="Ist" dashed={false} />
+        <ChartLegend color="#2ECC71" label="Soll (−0,5 kg/Wo.)" dashed={true} />
+      </div>
+    </div>
+  );
+}
+
 function ChartLegend({ color, label, dashed }: { color: string; label: string; dashed: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: 'var(--text-muted)' }}>
       <svg width="18" height="6" style={{ flexShrink: 0 }}>
         <line x1="0" y1="3" x2="18" y2="3" stroke={color} strokeWidth="2"
           strokeDasharray={dashed ? '4 2' : undefined} />
@@ -238,7 +228,7 @@ function Overlay({ children, onClose, masked, onToggleMask }: {
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+      background: 'var(--bg-page)',
       zIndex: 1000,
       overflowY: 'auto',
       padding: '20px 16px',
@@ -252,7 +242,7 @@ function Overlay({ children, onClose, masked, onToggleMask }: {
             margin: 0,
             fontFamily: "'Playfair Display', serif",
             fontSize: 'clamp(20px, 5vw, 26px)',
-            color: '#f1f5f9',
+            color: 'var(--text-primary)',
             letterSpacing: '-0.3px',
           }}>
             Gewichtsprofil
@@ -283,7 +273,7 @@ function Overlay({ children, onClose, masked, onToggleMask }: {
 function Field({ label: l, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>{l}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>{l}</div>
       {children}
     </div>
   );
@@ -293,7 +283,7 @@ function MiniStat({ label: l, value, color }: { label: string; value: string; co
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: 'clamp(14px, 4vw, 18px)', fontWeight: 700, color, lineHeight: 1.1 }}>{value}</div>
-      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{l}</div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{l}</div>
     </div>
   );
 }
@@ -374,8 +364,8 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
         <div style={card}>
           <div style={labelStyle}>Profil einrichten</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>
-              Erfasst seit: <span style={{ color: '#94a3b8', fontWeight: 600 }}>{fmt(firstTrackedDay)}</span>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Erfasst seit: <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{fmt(firstTrackedDay)}</span>
             </div>
             <Field label="Startgewicht (kg)">
               <input type="number" step="0.1" min="30" max="300" placeholder="z.B. 92.5"
@@ -433,11 +423,11 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
       <div style={card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
           <div style={{ ...labelStyle, marginBottom: 0 }}>Übersicht</div>
-          <div style={{ fontSize: '11px', color: '#334155' }}>seit {fmt(firstTrackedDay)}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-veryfaint)' }}>seit {fmt(firstTrackedDay)}</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: allEntries.length >= 2 ? '16px' : 0 }}>
-          <MiniStat label="Start" value={hide(`${profile.startWeight.toFixed(1)} kg`)} color="#94a3b8" />
-          <MiniStat label="Aktuell" value={hide(`${latest.weight.toFixed(1)} kg`)} color="#f1f5f9" />
+          <MiniStat label="Start" value={hide(`${profile.startWeight.toFixed(1)} kg`)} color="var(--text-secondary)" />
+          <MiniStat label="Aktuell" value={hide(`${latest.weight.toFixed(1)} kg`)} color="var(--text-primary)" />
           <MiniStat
             label="Abgenommen"
             value={hide(totalLoss >= 0 ? `−${totalLoss.toFixed(1)} kg` : `+${Math.abs(totalLoss).toFixed(1)} kg`)}
@@ -449,7 +439,7 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
           <div style={{
             marginTop: '12px',
             padding: '8px 12px',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--surface-subtle)',
             borderRadius: '8px',
             fontSize: '13px',
             color: hint.color,
@@ -474,21 +464,21 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
                 <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
                   −{idealKg.toFixed(1)} kg
                 </div>
-                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>ideal</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '2px' }}>ideal</div>
               </div>
             </div>
-            <div style={{ color: '#475569', fontSize: '16px', fontWeight: 600 }}>−</div>
+            <div style={{ color: 'var(--text-faint)', fontSize: '16px', fontWeight: 600 }}>−</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
               <ColorBox color="#E8453C" sym="−" />
               <div>
                 <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#3B82F6', lineHeight: 1 }}>
                   −{actualKg.toFixed(1)} kg
                 </div>
-                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>tatsächlich</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '2px' }}>tatsächlich</div>
               </div>
             </div>
           </div>
-          <div style={{ fontSize: '11px', color: '#334155', marginTop: '10px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-veryfaint)', marginTop: '10px' }}>
             {calTotalDays} Tage seit Start · {calOver} Überschreitungen abgezogen
           </div>
         </div>
@@ -507,9 +497,9 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '26px', fontWeight: 700, color: '#f1f5f9' }}>
+            <span style={{ fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)' }}>
               {hide(String(profile.targetCalories))}
-              <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>{masked ? '' : 'kcal/Tag'}</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 400, marginLeft: '6px' }}>{masked ? '' : 'kcal/Tag'}</span>
             </span>
             <button style={{ ...btnGhost, padding: '6px 12px', fontSize: '12px' }}
               onClick={() => { setNewCal(String(profile.targetCalories)); setEditCal(true); }}>
@@ -522,18 +512,18 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
       {/* Next check-in */}
       <div style={{
         ...card,
-        borderColor: overdue ? 'rgba(250, 204, 21, 0.3)' : 'rgba(255,255,255,0.08)',
+        borderColor: overdue ? 'rgba(250, 204, 21, 0.3)' : 'var(--card-border)',
       }}>
         <div style={labelStyle}>Nächster Check-in</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ color: '#f1f5f9', fontSize: '16px', fontWeight: 600 }}>{fmt(nextCheckIn)}</div>
-            <div style={{ color: '#64748b', fontSize: '12px', marginTop: '3px' }}>
+            <div style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600 }}>{fmt(nextCheckIn)}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '3px' }}>
               {overdue
                 ? `${Math.abs(daysToCheckIn)} Tag${Math.abs(daysToCheckIn) !== 1 ? 'e' : ''} überfällig`
                 : `in ${daysToCheckIn} Tagen`}
             </div>
-            <div style={{ color: '#334155', fontSize: '11px', marginTop: '4px' }}>{scheduleHint}</div>
+            <div style={{ color: 'var(--text-veryfaint)', fontSize: '11px', marginTop: '4px' }}>{scheduleHint}</div>
           </div>
           {overdue && (
             <span style={{
@@ -594,7 +584,7 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
 
               if (isEditing) {
                 return (
-                  <div key={entry.date} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={entry.date} style={{ padding: '8px 0', borderBottom: '1px solid var(--card-border)' }}>
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                       <input type="number" step="0.1" min="30" max="300"
                         value={editWeight} onChange={e => setEditWeight(e.target.value)}
@@ -623,9 +613,9 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '10px 0',
-                  borderBottom: isStart ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                  borderBottom: isStart ? 'none' : '1px solid var(--card-border)',
                 }}>
-                  <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {fmt(entry.date)}{isStart ? ' · Start' : ''}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -634,20 +624,20 @@ export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, o
                         {change > 0 ? `−${change.toFixed(1)}` : `+${Math.abs(change).toFixed(1)}`} kg
                       </span>
                     )}
-                    <span style={{ fontSize: '15px', fontWeight: 600, color: '#f1f5f9' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {hide(`${entry.weight.toFixed(1)} kg`)}
                     </span>
                     {!isStart && (
                       <>
                         <button
                           onClick={() => { setEditingIdx(entryIdx); setEditWeight(String(entry.weight)); setEditDate(entry.date); }}
-                          style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '15px', padding: '4px', lineHeight: 1 }}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: '15px', padding: '4px', lineHeight: 1 }}
                           title="Bearbeiten">
                           ✏
                         </button>
                         <button
                           onClick={() => onSave({ ...profile, weightEntries: profile.weightEntries.filter((_, idx) => idx !== entryIdx) })}
-                          style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '14px', padding: '4px', lineHeight: 1 }}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: '14px', padding: '4px', lineHeight: 1 }}
                           title="Löschen">
                           ✕
                         </button>

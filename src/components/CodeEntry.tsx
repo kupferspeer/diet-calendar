@@ -16,7 +16,7 @@ export function CodeEntry({ onSubmit }: Props) {
   return (
     <div style={{
       minHeight: '100dvh',
-      background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+      background: 'var(--bg-page)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -26,7 +26,7 @@ export function CodeEntry({ onSubmit }: Props) {
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
           fontSize: 'clamp(28px, 8vw, 40px)',
-          color: '#f1f5f9',
+          color: 'var(--text-primary)',
           margin: '0 0 8px',
           letterSpacing: '-0.3px',
           textAlign: 'center',
@@ -35,7 +35,7 @@ export function CodeEntry({ onSubmit }: Props) {
         </h1>
         <p style={{
           textAlign: 'center',
-          color: '#64748b',
+          color: 'var(--text-muted)',
           fontSize: '14px',
           margin: '0 0 36px',
           lineHeight: 1.5,
@@ -55,12 +55,12 @@ export function CodeEntry({ onSubmit }: Props) {
             autoCorrect="off"
             spellCheck={false}
             style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'var(--input-bg)',
+              border: '1px solid var(--input-border)',
               borderRadius: '12px',
               padding: '14px 16px',
               fontSize: '20px',
-              color: '#f1f5f9',
+              color: 'var(--text-primary)',
               outline: 'none',
               width: '100%',
               boxSizing: 'border-box',
@@ -73,13 +73,13 @@ export function CodeEntry({ onSubmit }: Props) {
             onClick={handleSubmit}
             disabled={!valid}
             style={{
-              background: valid ? '#2ECC71' : 'rgba(255,255,255,0.05)',
+              background: valid ? '#2ECC71' : 'var(--surface-subtle)',
               border: 'none',
               borderRadius: '12px',
               padding: '14px',
               fontSize: '16px',
               fontWeight: 600,
-              color: valid ? '#0f172a' : '#475569',
+              color: valid ? '#0f172a' : 'var(--text-faint)',
               cursor: valid ? 'pointer' : 'default',
               transition: 'background 0.2s, color 0.2s',
               fontFamily: "'DM Sans', sans-serif",
@@ -91,7 +91,7 @@ export function CodeEntry({ onSubmit }: Props) {
 
         <p style={{
           textAlign: 'center',
-          color: '#475569',
+          color: 'var(--text-faint)',
           fontSize: '12px',
           marginTop: '24px',
           lineHeight: 1.7,

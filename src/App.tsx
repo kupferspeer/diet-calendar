@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar } from './components/Calendar';
 import { Stats } from './components/Stats';
 import { SyncStatus } from './components/SyncStatus';
@@ -11,6 +11,7 @@ import { isFirebaseConfigured } from './firebase';
 const now = new Date();
 const TODAY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 const LS_CODE_KEY = 'diet-calendar-code';
+const LS_THEME_KEY = 'diet-calendar-theme';
 
 export function App() {
   const [userCode, setUserCode] = useState<string | null>(() => localStorage.getItem(LS_CODE_KEY));
@@ -21,6 +22,17 @@ export function App() {
   const { profile, saveProfile, resetProfile } = useProfile(userCode);
   const firstTrackedDay = Object.keys(days).sort()[0] ?? TODAY;
   const checkInDue = profile ? isCheckInDue(profile, firstTrackedDay) : false;
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem(LS_THEME_KEY) as 'light' | 'dark' | null;
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(LS_THEME_KEY, theme);
+  }, [theme]);
 
   if (!userCode) {
     return (
@@ -49,7 +61,7 @@ export function App() {
   return (
     <div style={{
       minHeight: '100dvh',
-      background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+      background: 'var(--bg-page)',
       padding: '20px 16px',
       paddingTop: 'max(env(safe-area-inset-top), 20px)',
       paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
@@ -63,7 +75,7 @@ export function App() {
             margin: 0,
             fontFamily: "'Playfair Display', serif",
             fontSize: 'clamp(22px, 6vw, 30px)',
-            color: '#f1f5f9',
+            color: 'var(--text-primary)',
             letterSpacing: '-0.3px',
           }}>
             Diät-Kalender
@@ -71,14 +83,33 @@ export function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <SyncStatus sync={sync} />
             <button
+              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? 'Hellmodus' : 'Dunkelmodus'}
+              style={{
+                background: 'none',
+                border: '1px solid var(--btn-border)',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                color: 'var(--text-muted)',
+                fontSize: '16px',
+                cursor: 'pointer',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {theme === 'dark' ? '☀' : '☽'}
+            </button>
+            <button
               onClick={() => setShowWeight(true)}
               style={{
                 position: 'relative',
                 background: 'none',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid var(--btn-border)',
                 borderRadius: '8px',
                 padding: '6px 10px',
-                color: '#64748b',
+                color: 'var(--text-muted)',
                 fontSize: '18px',
                 cursor: 'pointer',
                 lineHeight: 1,
@@ -98,7 +129,7 @@ export function App() {
                   height: '8px',
                   borderRadius: '50%',
                   background: '#E8453C',
-                  border: '2px solid #0f172a',
+                  border: '2px solid var(--bg-deep)',
                   display: 'block',
                 }} />
               )}
@@ -113,22 +144,22 @@ export function App() {
           justifyContent: 'space-between',
           marginBottom: '20px',
           padding: '10px 14px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--card-border)',
           borderRadius: '10px',
         }}>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>
-            Code: <span style={{ color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>{userCode}</span>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Code: <span style={{ color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em' }}>{userCode}</span>
           </div>
           <button
             onClick={handleChangeCode}
             style={{
               background: 'none',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid var(--btn-border)',
               borderRadius: '6px',
               padding: '4px 10px',
               fontSize: '11px',
-              color: '#64748b',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               fontFamily: "'DM Sans', sans-serif",
             }}
@@ -172,7 +203,7 @@ export function App() {
             { color: '#2ECC71', label: 'Ziel getroffen', sym: '○' },
             { color: '#3B82F6', label: 'Unter Ziel', sym: '+' },
           ].map(({ color, label, sym }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94a3b8' }}>
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
               <div style={{
                 width: '22px', height: '22px', borderRadius: '6px',
                 background: color, display: 'flex', alignItems: 'center',

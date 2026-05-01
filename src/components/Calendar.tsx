@@ -37,7 +37,7 @@ export function Calendar({ year, month, days, today, onToggle, onPrevMonth, onNe
           <div key={d} style={{
             textAlign: 'center',
             fontSize: '11px',
-            color: '#475569',
+            color: 'var(--text-faint)',
             fontWeight: 600,
             padding: '3px 0',
             letterSpacing: '0.04em',

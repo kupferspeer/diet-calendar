@@ -2,12 +2,53 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: dark;
+  --bg-page: linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  --bg-deep: #0f172a;
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --surface-subtle: rgba(255,255,255,0.05);
+  --surface-hover: rgba(255,255,255,0.1);
+  --input-bg: rgba(255,255,255,0.06);
+  --input-border: rgba(255,255,255,0.12);
+  --btn-border: rgba(255,255,255,0.1);
+  --btn-ghost-bg: rgba(255,255,255,0.06);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-faint: #475569;
+  --text-veryfaint: #334155;
+  --chart-grid: rgba(255,255,255,0.05);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-page: linear-gradient(160deg, #f0f6ff 0%, #e2ecf9 50%, #f0f6ff 100%);
+  --bg-deep: #f0f6ff;
+  --card-bg: rgba(255,255,255,0.85);
+  --card-border: rgba(0,0,0,0.09);
+  --surface-subtle: rgba(0,0,0,0.04);
+  --surface-hover: rgba(0,0,0,0.08);
+  --input-bg: rgba(255,255,255,0.95);
+  --input-border: rgba(0,0,0,0.15);
+  --btn-border: rgba(0,0,0,0.12);
+  --btn-ghost-bg: rgba(0,0,0,0.04);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+  --text-veryfaint: #94a3b8;
+  --chart-grid: rgba(0,0,0,0.07);
+}
+
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+  background: var(--bg-deep);
 }
 
 button {

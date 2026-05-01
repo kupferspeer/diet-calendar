@@ -13,14 +13,14 @@ const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.04)',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: '14px',
-  padding: '16px',
+  padding: '14px',
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: '11px',
   color: '#475569',
   fontWeight: 600,
-  marginBottom: '14px',
+  marginBottom: '10px',
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
 };
@@ -44,12 +44,21 @@ export function Stats({ days, year, month }: Props) {
   const barHit   = aTotal > 0 ? (aHit   / aTotal) * 100 : 0;
   const barUnder = aTotal > 0 ? (aUnder / aTotal) * 100 : 0;
 
+  const allKeys = Object.keys(days);
+  const firstDay = allKeys.length > 0 ? allKeys.sort()[0] : null;
+  const totalDays = firstDay
+    ? Math.max(1, Math.floor((Date.now() - new Date(firstDay).getTime()) / 86400000) + 1)
+    : 0;
+  const idealKg  = totalDays * 500 / 7700;
+  const actualKg = (aHit + aUnder) * 500 / 7700;
+
   return (
-    <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
       {/* Monthly card */}
       <div style={cardStyle}>
         <div style={labelStyle}>Dieser Monat</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
           <StatCell value={mOver}  label="Über"      color="#E8453C" />
           <StatCell value={mHit}   label="Getroffen" color="#2ECC71" />
           <StatCell value={mUnder} label="Darunter"  color="#3B82F6" />
@@ -57,13 +66,18 @@ export function Stats({ days, year, month }: Props) {
         </div>
       </div>
 
-      {/* Overall progress bar */}
+      {/* Combined: progress bar + weight loss */}
       {aTotal > 0 && (
-        <div style={cardStyle}>
+        <div style={{
+          ...cardStyle,
+          background: 'rgba(46, 204, 113, 0.05)',
+          border: '1px solid rgba(46, 204, 113, 0.15)',
+        }}>
+          {/* Progress bar */}
           <div style={labelStyle}>Gesamtfortschritt · {aTotal} Tage</div>
           <div style={{
-            height: '10px',
-            borderRadius: '5px',
+            height: '8px',
+            borderRadius: '4px',
             overflow: 'hidden',
             display: 'flex',
             background: 'rgba(255,255,255,0.05)',
@@ -72,57 +86,44 @@ export function Stats({ days, year, month }: Props) {
             {barHit   > 0 && <div style={{ width: `${barHit}%`,   background: '#2ECC71', transition: 'width 0.4s ease' }} />}
             {barUnder > 0 && <div style={{ width: `${barUnder}%`, background: '#3B82F6', transition: 'width 0.4s ease' }} />}
           </div>
-          <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
             <Legend color="#E8453C" label={`Über: ${aOver}`} />
             <Legend color="#2ECC71" label={`Getroffen: ${aHit}`} />
             <Legend color="#3B82F6" label={`Darunter: ${aUnder}`} />
           </div>
-        </div>
-      )}
 
-      {/* Possible weight loss */}
-      {aTotal > 0 && (() => {
-        const allKeys = Object.keys(days);
-        const firstDay = allKeys.length > 0 ? allKeys.sort()[0] : null;
-        const totalDays = firstDay
-          ? Math.max(1, Math.floor((Date.now() - new Date(firstDay).getTime()) / 86400000) + 1)
-          : 0;
-        const idealKg = (totalDays * 500 / 7700);
-        const actualKg = ((aHit + aUnder) * 500 / 7700);
-        return (
-          <div style={{
-            ...cardStyle,
-            background: 'rgba(46, 204, 113, 0.06)',
-            border: '1px solid rgba(46, 204, 113, 0.2)',
-          }}>
-            <div style={labelStyle}>Möglicher Gewichtsverlust</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* Row 1: ideal */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ColorBox color="#2ECC71" sym="○" />
-                <span style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
+          {/* Divider */}
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '10px 0' }} />
+
+          {/* Weight loss rows */}
+          <div style={{ fontSize: '11px', color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+            Möglicher Gewichtsverlust
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* Ideal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
+              <ColorBox color="#2ECC71" sym="○" />
+              <div>
+                <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
                   −{idealKg.toFixed(1)} kg
-                </span>
-                <span style={{ fontSize: '11px', color: '#475569', marginLeft: '2px' }}>ideal</span>
-              </div>
-              {/* Row 2: actual */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <ColorBox color="#2ECC71" sym="○" />
-                <span style={{ fontSize: '15px', color: '#64748b', fontWeight: 600 }}>−</span>
-                <ColorBox color="#E8453C" sym="−" />
-                <span style={{ fontSize: '15px', color: '#64748b', fontWeight: 600 }}>=</span>
-                <span style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: '#3B82F6', lineHeight: 1 }}>
-                  −{actualKg.toFixed(1)} kg
-                </span>
-                <span style={{ fontSize: '11px', color: '#475569', marginLeft: '2px' }}>tatsächlich</span>
+                </div>
+                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>ideal</div>
               </div>
             </div>
-            <div style={{ fontSize: '11px', color: '#334155', marginTop: '10px' }}>
-              {totalDays} Tage seit Start · {aOver} Überschreitungen abgezogen
+            <div style={{ color: '#334155', fontSize: '16px', fontWeight: 600 }}>−</div>
+            {/* Actual */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
+              <ColorBox color="#E8453C" sym="−" />
+              <div>
+                <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#3B82F6', lineHeight: 1 }}>
+                  −{actualKg.toFixed(1)} kg
+                </div>
+                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>tatsächlich</div>
+              </div>
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }
@@ -130,7 +131,7 @@ export function Stats({ days, year, month }: Props) {
 function StatCell({ value, label, color }: { value: number | string; label: string; color: string }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{label}</div>
     </div>
   );

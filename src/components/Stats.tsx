@@ -80,27 +80,49 @@ export function Stats({ days, year, month }: Props) {
         </div>
       )}
 
-      {/* Theoretical weight loss motivator */}
-      {(aHit + aUnder) > 0 && (
-        <div style={{
-          ...cardStyle,
-          background: 'rgba(46, 204, 113, 0.06)',
-          border: '1px solid rgba(46, 204, 113, 0.2)',
-        }}>
-          <div style={labelStyle}>Theoretischer Verlust</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ fontSize: 'clamp(28px, 7vw, 36px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
-              −{((aHit + aUnder) * 500 / 7700).toFixed(1)} kg
-            </span>
-            <span style={{ fontSize: '12px', color: '#475569', lineHeight: 1.3 }}>
-              bei 500 kcal{'\n'}Defizit/Tag
-            </span>
+      {/* Possible weight loss */}
+      {aTotal > 0 && (() => {
+        const allKeys = Object.keys(days);
+        const firstDay = allKeys.length > 0 ? allKeys.sort()[0] : null;
+        const totalDays = firstDay
+          ? Math.max(1, Math.floor((Date.now() - new Date(firstDay).getTime()) / 86400000) + 1)
+          : 0;
+        const idealKg = (totalDays * 500 / 7700);
+        const actualKg = ((aHit + aUnder) * 500 / 7700);
+        return (
+          <div style={{
+            ...cardStyle,
+            background: 'rgba(46, 204, 113, 0.06)',
+            border: '1px solid rgba(46, 204, 113, 0.2)',
+          }}>
+            <div style={labelStyle}>Möglicher Gewichtsverlust</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Row 1: ideal */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ColorBox color="#2ECC71" sym="○" />
+                <span style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
+                  −{idealKg.toFixed(1)} kg
+                </span>
+                <span style={{ fontSize: '11px', color: '#475569', marginLeft: '2px' }}>ideal</span>
+              </div>
+              {/* Row 2: actual */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <ColorBox color="#2ECC71" sym="○" />
+                <span style={{ fontSize: '15px', color: '#64748b', fontWeight: 600 }}>−</span>
+                <ColorBox color="#E8453C" sym="−" />
+                <span style={{ fontSize: '15px', color: '#64748b', fontWeight: 600 }}>=</span>
+                <span style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color: '#3B82F6', lineHeight: 1 }}>
+                  −{actualKg.toFixed(1)} kg
+                </span>
+                <span style={{ fontSize: '11px', color: '#475569', marginLeft: '2px' }}>tatsächlich</span>
+              </div>
+            </div>
+            <div style={{ fontSize: '11px', color: '#334155', marginTop: '10px' }}>
+              {totalDays} Tage seit Start · {aOver} Überschreitungen abgezogen
+            </div>
           </div>
-          <div style={{ fontSize: '11px', color: '#334155', marginTop: '8px' }}>
-            {aHit + aUnder} Zieltage × 500 kcal ÷ 7.700 kcal/kg
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -110,6 +132,19 @@ function StatCell({ value, label, color }: { value: number | string; label: stri
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{label}</div>
+    </div>
+  );
+}
+
+function ColorBox({ color, sym }: { color: string; sym: string }) {
+  return (
+    <div style={{
+      width: '22px', height: '22px', borderRadius: '6px',
+      background: color, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', color: '#fff', fontSize: '13px',
+      fontWeight: 600, flexShrink: 0,
+    }}>
+      {sym}
     </div>
   );
 }

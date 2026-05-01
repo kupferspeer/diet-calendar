@@ -14,8 +14,8 @@ const LS_CODE_KEY = 'diet-calendar-code';
 
 export function App() {
   const [userCode, setUserCode] = useState<string | null>(() => localStorage.getItem(LS_CODE_KEY));
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(3); // April
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
   const [showWeight, setShowWeight] = useState(false);
   const { days, sync, toggleDay } = useCalendarData(userCode);
   const { profile, saveProfile, resetProfile } = useProfile(userCode);

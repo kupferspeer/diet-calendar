@@ -191,6 +191,7 @@ export function App() {
         <WeightStats
           profile={profile}
           firstTrackedDay={firstTrackedDay}
+          days={days}
           onClose={() => setShowWeight(false)}
           onSave={saveProfile}
           onReset={resetProfile}

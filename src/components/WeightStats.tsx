@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, WeightEntry } from '../types';
+import { UserProfile, WeightEntry, DaysMap } from '../types';
 
 // Cumulative offset in days from firstTrackedDay for the next check-in.
 // Check-ins 1–3: day 60 / 120 / 180  (every 2 months)
@@ -201,6 +201,19 @@ function WeightChart({ entries, startWeight, masked }: { entries: ChartEntry[]; 
   );
 }
 
+function ColorBox({ color, sym }: { color: string; sym: string }) {
+  return (
+    <div style={{
+      width: '22px', height: '22px', borderRadius: '6px',
+      background: color, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', color: '#fff', fontSize: '13px',
+      fontWeight: 600, flexShrink: 0,
+    }}>
+      {sym}
+    </div>
+  );
+}
+
 function ChartLegend({ color, label, dashed }: { color: string; label: string; dashed: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#64748b' }}>
@@ -290,12 +303,13 @@ function MiniStat({ label: l, value, color }: { label: string; value: string; co
 interface Props {
   profile: UserProfile | null;
   firstTrackedDay: string;
+  days: DaysMap;
   onClose: () => void;
   onSave: (profile: UserProfile) => void;
   onReset: () => void;
 }
 
-export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset }: Props) {
+export function WeightStats({ profile, firstTrackedDay, days, onClose, onSave, onReset }: Props) {
   const today = todayStr();
 
   const [sWeight, setSWeight] = useState('');
@@ -379,6 +393,17 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
   }
 
   // ── Stats screen ──────────────────────────────────────────────────────────────
+  const allVals = Object.values(days);
+  const calOver  = allVals.filter(v => v === 'over').length;
+  const calHit   = allVals.filter(v => v === 'hit').length;
+  const calUnder = allVals.filter(v => v === 'under').length;
+  const calTotal = calOver + calHit + calUnder;
+  const calTotalDays = firstTrackedDay
+    ? Math.max(1, Math.floor((Date.now() - new Date(firstTrackedDay).getTime()) / 86400000) + 1)
+    : 0;
+  const idealKg  = calTotalDays * 500 / 7700;
+  const actualKg = (calHit + calUnder) * 500 / 7700;
+
   const allEntries = [
     { date: firstTrackedDay, weight: profile.startWeight },
     ...profile.weightEntries,
@@ -433,6 +458,41 @@ export function WeightStats({ profile, firstTrackedDay, onClose, onSave, onReset
           </div>
         )}
       </div>
+
+      {/* Possible weight loss */}
+      {calTotal > 0 && (
+        <div style={{
+          ...card,
+          background: 'rgba(46, 204, 113, 0.05)',
+          border: '1px solid rgba(46, 204, 113, 0.15)',
+        }}>
+          <div style={labelStyle}>Möglicher Gewichtsverlust</div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+              <ColorBox color="#2ECC71" sym="○" />
+              <div>
+                <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
+                  −{idealKg.toFixed(1)} kg
+                </div>
+                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>ideal</div>
+              </div>
+            </div>
+            <div style={{ color: '#475569', fontSize: '16px', fontWeight: 600 }}>−</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+              <ColorBox color="#E8453C" sym="−" />
+              <div>
+                <div style={{ fontSize: 'clamp(16px, 4.5vw, 20px)', fontWeight: 700, color: '#3B82F6', lineHeight: 1 }}>
+                  −{actualKg.toFixed(1)} kg
+                </div>
+                <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>tatsächlich</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#334155', marginTop: '10px' }}>
+            {calTotalDays} Tage seit Start · {calOver} Überschreitungen abgezogen
+          </div>
+        </div>
+      )}
 
       {/* Calorie target */}
       <div style={card}>

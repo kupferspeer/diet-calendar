@@ -79,6 +79,28 @@ export function Stats({ days, year, month }: Props) {
           </div>
         </div>
       )}
+
+      {/* Theoretical weight loss motivator */}
+      {(aHit + aUnder) > 0 && (
+        <div style={{
+          ...cardStyle,
+          background: 'rgba(46, 204, 113, 0.06)',
+          border: '1px solid rgba(46, 204, 113, 0.2)',
+        }}>
+          <div style={labelStyle}>Theoretischer Verlust</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: 'clamp(28px, 7vw, 36px)', fontWeight: 700, color: '#2ECC71', lineHeight: 1 }}>
+              −{((aHit + aUnder) * 500 / 7700).toFixed(1)} kg
+            </span>
+            <span style={{ fontSize: '12px', color: '#475569', lineHeight: 1.3 }}>
+              bei 500 kcal{'\n'}Defizit/Tag
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#334155', marginTop: '8px' }}>
+            {aHit + aUnder} Zieltage × 500 kcal ÷ 7.700 kcal/kg
+          </div>
+        </div>
+      )}
     </div>
   );
 }
